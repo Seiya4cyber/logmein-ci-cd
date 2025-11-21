@@ -1,0 +1,28 @@
+name: CD
+
+on:
+  push:
+    branches: [ "develop" ]
+  workflow_dispatch:  # déclenchement manuel pour la prod
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to registry
+        run: |
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ghcr.io -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
+
+      - name: Build images
+        run: |
+          docker build -t ghcr.io/org/logmein-backend:latest ./backend
+          docker build -t ghcr.io/org/logmein-frontend:latest ./frontend
+
+      - name: Push images
+        run: |
+          docker push ghcr.io/org/logmein-backend:latest
+          docker push ghcr.io/org/logmein-frontend:latest
