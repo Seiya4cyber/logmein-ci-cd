@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" , "develop" ]
+  pull_request:
+    branches: [ "main" , "develop" ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+- name: Install backend dependencies
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt || true
+
+- name: Run backend tests
+        working-directory: backend
+        run: |
+          pytest || python -m unittest
+
+- name: Security scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          ignore-unfixed: true
+          severity: "HIGH,CRITICAL"
+          exit-code: "1"
+
+  - name: Build Docker images (no push)
+        run: |
+          docker build -t logmein-backend ./backend
+          docker build -t logmein-frontend ./frontend
